@@ -29,6 +29,8 @@ import com.example.phoneapp.ui.theme.PhoneAppTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var pendingAppSelection = false
+
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
@@ -45,11 +47,45 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onSaveAndStart = { checkAllPermissionsAndStart() }
+                        onSaveAndStart = { checkAllPermissionsAndStart() },
+                        onChooseApps = { openAppSelection() }
                     )
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // If we were waiting for usage stats permission, check and proceed
+        if (pendingAppSelection && hasUsageStatsPermission()) {
+            pendingAppSelection = false
+            startActivity(Intent(this, AppSelectionActivity::class.java))
+        }
+    }
+
+    private fun openAppSelection() {
+        if (!hasUsageStatsPermission()) {
+            pendingAppSelection = true
+            Toast.makeText(
+                this,
+                "Please enable Usage Access for Social Detox",
+                Toast.LENGTH_LONG
+            ).show()
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        } else {
+            startActivity(Intent(this, AppSelectionActivity::class.java))
+        }
+    }
+
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as android.app.AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            android.app.AppOpsManager.OPSTR_GET_USAGE_STATS,
+            android.os.Process.myUid(),
+            packageName
+        )
+        return mode == android.app.AppOpsManager.MODE_ALLOWED
     }
 
     private fun checkAllPermissionsAndStart() {
@@ -69,21 +105,18 @@ class MainActivity : ComponentActivity() {
 
     private fun checkOverlayAndStart() {
         if (!Settings.canDrawOverlays(this)) {
-            // Show toast explaining what to do
             Toast.makeText(
                 this,
                 "Please enable 'Display over other apps' for Social Detox, then come back and tap Save again",
                 Toast.LENGTH_LONG
             ).show()
 
-            // Open settings
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                 Uri.parse("package:$packageName")
             )
             startActivity(intent)
         } else {
-            // Permission granted, start the service
             startTimerService()
         }
     }
@@ -99,13 +132,17 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onSaveAndStart: () -> Unit = {}
+    onSaveAndStart: () -> Unit = {},
+    onChooseApps: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
     // Load saved value (default 10 minutes)
     var minutes by remember { mutableStateOf(prefs.getInt("time_limit", 10).toString()) }
+
+    // Load selected apps count
+    val selectedAppsCount = prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0
 
     Column(
         modifier = modifier
@@ -139,6 +176,21 @@ fun SettingsScreen(
             singleLine = true,
             modifier = Modifier.width(150.dp)
         )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Choose Apps button
+        OutlinedButton(
+            onClick = onChooseApps,
+            modifier = Modifier.fillMaxWidth(0.7f)
+        ) {
+            Text(
+                text = if (selectedAppsCount > 0)
+                    "Choose Apps ($selectedAppsCount selected)"
+                else
+                    "Choose Apps"
+            )
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
