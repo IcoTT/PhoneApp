@@ -4,8 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,7 +33,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
         if (isGranted) {
-            startTimerService()
+            checkOverlayAndStart()
         }
     }
 
@@ -42,27 +45,45 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onSaveAndStart = { checkPermissionAndStart() }
+                        onSaveAndStart = { checkAllPermissionsAndStart() }
                     )
                 }
             }
         }
     }
 
-    private fun checkPermissionAndStart() {
+    private fun checkAllPermissionsAndStart() {
+        // First check notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
+            if (ContextCompat.checkSelfPermission(
                     this,
                     Manifest.permission.POST_NOTIFICATIONS
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    startTimerService()
-                }
-                else -> {
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                return
             }
+        }
+        checkOverlayAndStart()
+    }
+
+    private fun checkOverlayAndStart() {
+        if (!Settings.canDrawOverlays(this)) {
+            // Show toast explaining what to do
+            Toast.makeText(
+                this,
+                "Please enable 'Display over other apps' for Social Detox, then come back and tap Save again",
+                Toast.LENGTH_LONG
+            ).show()
+
+            // Open settings
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:$packageName")
+            )
+            startActivity(intent)
         } else {
+            // Permission granted, start the service
             startTimerService()
         }
     }
@@ -70,6 +91,8 @@ class MainActivity : ComponentActivity() {
     private fun startTimerService() {
         val intent = Intent(this, TimerService::class.java)
         startForegroundService(intent)
+        Toast.makeText(this, "Monitoring started!", Toast.LENGTH_SHORT).show()
+        finish()
     }
 }
 

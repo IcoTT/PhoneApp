@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 
 class TimerService : Service() {
@@ -21,7 +22,6 @@ class TimerService : Service() {
     companion object {
         const val CHANNEL_ID = "social_detox_channel"
         const val NOTIFICATION_ID = 1
-        const val ALERT_NOTIFICATION_ID = 2
         const val SUBSEQUENT_INTERVAL = 180 // 3 minutes in seconds
     }
 
@@ -71,7 +71,7 @@ class TimerService : Service() {
 
                 // First notification when time limit reached
                 if (timeElapsed >= timeLimitSeconds && !firstNotificationSent) {
-                    showFirstNotification()
+                    showFirstMessage()
                     firstNotificationSent = true
                 }
 
@@ -79,7 +79,7 @@ class TimerService : Service() {
                 if (firstNotificationSent) {
                     val timeAfterFirst = timeElapsed - timeLimitSeconds
                     if (timeAfterFirst > 0 && timeAfterFirst % SUBSEQUENT_INTERVAL == 0) {
-                        showTechniqueNotification()
+                        showTechniqueMessage()
                     }
                 }
 
@@ -111,33 +111,40 @@ class TimerService : Service() {
             .build()
     }
 
-    private fun showFirstNotification() {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Hey, just a gentle reminder 💙")
-            .setContentText("You've been on for $timeLimit minutes. Maybe a good moment for a break?")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(ALERT_NOTIFICATION_ID, notification)
+    private fun showFirstMessage() {
+        val title = "Hey, just a gentle reminder 💙"
+        val message = "You've been on for $timeLimit minutes. Maybe a good moment for a break?"
+        showOverlayOrNotification(title, message)
     }
 
-    private fun showTechniqueNotification() {
-        val technique = techniques.random()
+    private fun showTechniqueMessage() {
+        val title = "Try this quick technique ✨"
+        val message = techniques.random()
+        showOverlayOrNotification(title, message)
+    }
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Try this quick technique ✨")
-            .setContentText(technique)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(technique))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
+    private fun showOverlayOrNotification(title: String, message: String) {
+        if (Settings.canDrawOverlays(this)) {
+            // Show overlay
+            val intent = Intent(this, OverlayService::class.java).apply {
+                putExtra(OverlayService.EXTRA_TITLE, title)
+                putExtra(OverlayService.EXTRA_MESSAGE, message)
+            }
+            startService(intent)
+        } else {
+            // Fallback to notification
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle(title)
+                .setContentText(message)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .build()
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(ALERT_NOTIFICATION_ID, notification)
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            notificationManager.notify(System.currentTimeMillis().toInt(), notification)
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
