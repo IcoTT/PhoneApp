@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
@@ -18,11 +19,14 @@ class TimerService : Service() {
     private var timeElapsed = 0
     private var timeLimit = 10 // minutes
     private var firstNotificationSent = false
+    private var monitoredApps = setOf<String>()
+    private var wasMonitoredAppActive = false
 
     companion object {
         const val CHANNEL_ID = "social_detox_channel"
         const val NOTIFICATION_ID = 1
         const val SUBSEQUENT_INTERVAL = 180 // 3 minutes in seconds
+        const val CHECK_INTERVAL = 1000L // Check every 1 second
     }
 
     private val techniques = listOf(
@@ -44,56 +48,107 @@ class TimerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Load time limit from preferences
+        // Load settings from preferences
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         timeLimit = prefs.getInt("time_limit", 10)
+        monitoredApps = prefs.getStringSet("monitored_apps", emptySet()) ?: emptySet()
 
         // Reset state
         timeElapsed = 0
         firstNotificationSent = false
+        wasMonitoredAppActive = false
 
         // Start foreground service with notification
         val notification = buildForegroundNotification()
         startForeground(NOTIFICATION_ID, notification)
 
-        // Start timer
-        startTimer()
+        // Start monitoring
+        startMonitoring()
 
         return START_STICKY
     }
 
-    private fun startTimer() {
+    private fun startMonitoring() {
         handler.post(object : Runnable {
             override fun run() {
-                timeElapsed++
+                // Check if a monitored app is currently in foreground
+                val currentApp = getForegroundApp()
+                val isMonitoredAppActive = monitoredApps.contains(currentApp)
 
-                val timeLimitSeconds = timeLimit * 60
+                if (isMonitoredAppActive) {
+                    // Monitored app is active - count time
+                    timeElapsed++
+                    wasMonitoredAppActive = true
 
-                // First notification when time limit reached
-                if (timeElapsed >= timeLimitSeconds && !firstNotificationSent) {
-                    showFirstMessage()
-                    firstNotificationSent = true
-                }
+                    val timeLimitSeconds = timeLimit * 60
 
-                // Subsequent notifications every 3 minutes after first
-                if (firstNotificationSent) {
-                    val timeAfterFirst = timeElapsed - timeLimitSeconds
-                    if (timeAfterFirst > 0 && timeAfterFirst % SUBSEQUENT_INTERVAL == 0) {
-                        showTechniqueMessage()
+                    // First notification when time limit reached
+                    if (timeElapsed >= timeLimitSeconds && !firstNotificationSent) {
+                        showFirstMessage()
+                        firstNotificationSent = true
                     }
+
+                    // Subsequent notifications every 3 minutes after first
+                    if (firstNotificationSent) {
+                        val timeAfterFirst = timeElapsed - timeLimitSeconds
+                        if (timeAfterFirst > 0 && timeAfterFirst % SUBSEQUENT_INTERVAL == 0) {
+                            showTechniqueMessage()
+                        }
+                    }
+
+                    // Update foreground notification with time
+                    updateForegroundNotification(timeElapsed)
+
+                } else if (wasMonitoredAppActive) {
+                    // User left monitored app - RESET timer!
+                    timeElapsed = 0
+                    firstNotificationSent = false
+                    wasMonitoredAppActive = false
+
+                    // Update notification to show reset
+                    updateForegroundNotificationIdle()
                 }
 
-                // Continue timer every second
-                handler.postDelayed(this, 1000)
+                // Continue checking every second
+                handler.postDelayed(this, CHECK_INTERVAL)
             }
         })
+    }
+
+    private fun getForegroundApp(): String? {
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val endTime = System.currentTimeMillis()
+        val startTime = endTime - 1000 * 60 // Last 1 minute
+
+        val usageStatsList = usageStatsManager.queryUsageStats(
+            UsageStatsManager.INTERVAL_DAILY,
+            startTime,
+            endTime
+        )
+
+        if (usageStatsList.isNullOrEmpty()) {
+            return null
+        }
+
+        // Find the most recently used app
+        var recentApp: String? = null
+        var recentTime = 0L
+
+        for (usageStats in usageStatsList) {
+            if (usageStats.lastTimeUsed > recentTime) {
+                recentTime = usageStats.lastTimeUsed
+                recentApp = usageStats.packageName
+            }
+        }
+
+        return recentApp
     }
 
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Social Detox Timer",
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Shows when timer is running"
         }
@@ -105,10 +160,38 @@ class TimerService : Service() {
     private fun buildForegroundNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Social Detox Active")
-            .setContentText("Monitoring your social media time...")
+            .setContentText("Waiting for monitored app...")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
+    }
+
+    private fun updateForegroundNotification(seconds: Int) {
+        val minutes = seconds / 60
+        val secs = seconds % 60
+        val timeText = String.format("%d:%02d", minutes, secs)
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Social Detox Active")
+            .setContentText("Uninterrupted time: $timeText")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun updateForegroundNotificationIdle() {
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Social Detox Active")
+            .setContentText("Great! You took a break. Timer reset.")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
     private fun showFirstMessage() {
