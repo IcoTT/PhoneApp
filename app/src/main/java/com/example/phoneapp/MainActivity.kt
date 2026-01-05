@@ -79,15 +79,28 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = {
-                val timeLimit = minutes.toIntOrNull() ?: 10
-                prefs.edit().putInt("time_limit", timeLimit).apply()
-                saved = true
-            },
-            modifier = Modifier.width(150.dp)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Save")
+            Button(
+                onClick = {
+                    val timeLimit = minutes.toIntOrNull() ?: 10
+                    prefs.edit().putInt("time_limit", timeLimit).apply()
+                    saved = true
+                },
+                modifier = Modifier.width(120.dp)
+            ) {
+                Text("Save")
+            }
+            
+            OutlinedButton(
+                onClick = {
+                    (context as? ComponentActivity)?.finish()
+                },
+                modifier = Modifier.width(120.dp)
+            ) {
+                Text("Cancel")
+            }
         }
 
         if (saved) {
