@@ -16,6 +16,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -60,8 +63,22 @@ fun AppSelectionScreen(
     val savedApps = prefs.getStringSet("monitored_apps", emptySet()) ?: emptySet()
     var selectedApps by remember { mutableStateOf(savedApps.toSet()) }
 
+    // Search query
+    var searchQuery by remember { mutableStateOf("") }
+
     // Get installed apps
     val installedApps = remember { getInstalledApps(context) }
+
+    // Filter apps based on search
+    val filteredApps = remember(searchQuery, installedApps) {
+        if (searchQuery.isEmpty()) {
+            installedApps
+        } else {
+            installedApps.filter { app ->
+                app.appName.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
 
     Column(
         modifier = modifier
@@ -82,10 +99,46 @@ fun AppSelectionScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Search field
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Search apps...") },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Search"
+                )
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear"
+                        )
+                    }
+                }
+            },
+            singleLine = true
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Show count
+        Text(
+            text = "${filteredApps.size} apps found, ${selectedApps.size} selected",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         LazyColumn(
             modifier = Modifier.weight(1f)
         ) {
-            items(installedApps) { app ->
+            items(filteredApps) { app ->
                 val isSelected = selectedApps.contains(app.packageName)
 
                 Row(
@@ -166,7 +219,6 @@ fun AppSelectionScreen(
 private fun getInstalledApps(context: Context): List<AppInfo> {
     val pm = context.packageManager
 
-    // Get all apps that have a launcher icon
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
     }

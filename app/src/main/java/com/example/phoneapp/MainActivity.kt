@@ -141,9 +141,6 @@ fun SettingsScreen(
     // Load saved value (default 10 minutes)
     var minutes by remember { mutableStateOf(prefs.getInt("time_limit", 10).toString()) }
 
-    // Load selected apps count
-    val selectedAppsCount = prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -185,10 +182,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(0.7f)
         ) {
             Text(
-                text = if (selectedAppsCount > 0)
-                    "Choose Apps ($selectedAppsCount selected)"
-                else
-                    "Choose Apps"
+                "Choose Apps"
             )
         }
 
