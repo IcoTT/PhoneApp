@@ -2,7 +2,6 @@ package com.example.phoneapp
 
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
@@ -300,6 +299,13 @@ fun AppSelectionScreen(
                     prefs.edit()
                         .putStringSet("monitored_apps", selectedApps)
                         .apply()
+
+                    // Restart service if monitoring is enabled
+                    if (isMonitoringEnabled(context)) {
+                        context.stopService(Intent(context, TimerService::class.java))
+                        context.startForegroundService(Intent(context, TimerService::class.java))
+                    }
+
                     onDone()
                 },
                 modifier = Modifier.width(120.dp),

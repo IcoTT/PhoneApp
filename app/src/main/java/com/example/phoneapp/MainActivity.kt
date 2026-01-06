@@ -42,25 +42,34 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        updateUI()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (pendingAppSelection && hasUsageStatsPermission()) {
+            pendingAppSelection = false
+            startActivity(Intent(this, AppSelectionActivity::class.java))
+        } else {
+            updateUI()
+        }
+    }
+
+    private fun updateUI() {
         setContent {
             PhoneAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
-                        onSaveAndStart = { checkAllPermissionsAndStart() },
-                        onChooseApps = { openAppSelection() }
+                        isMonitoring = isMonitoringEnabled(this),
+                        onStart = { checkAllPermissionsAndStart() },
+                        onStop = { stopTimerService() },
+                        onChooseApps = { openAppSelection() },
+                        onClose = { finish() },
+                        onSettingsChanged = { restartServiceIfRunning() }
                     )
                 }
             }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        // If we were waiting for usage stats permission, check and proceed
-        if (pendingAppSelection && hasUsageStatsPermission()) {
-            pendingAppSelection = false
-            startActivity(Intent(this, AppSelectionActivity::class.java))
         }
     }
 
@@ -89,7 +98,6 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun checkAllPermissionsAndStart() {
-        // First check notification permission (Android 13+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
                     this,
@@ -107,7 +115,7 @@ class MainActivity : ComponentActivity() {
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(
                 this,
-                "Please enable 'Display over other apps' for Social Detox, then come back and tap Save again",
+                "Please enable 'Display over other apps' for Social Detox, then come back and tap Start again",
                 Toast.LENGTH_LONG
             ).show()
 
@@ -122,23 +130,42 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startTimerService() {
+        setMonitoringEnabled(this, true)
         val intent = Intent(this, TimerService::class.java)
         startForegroundService(intent)
         Toast.makeText(this, "Monitoring started!", Toast.LENGTH_SHORT).show()
-        finish()
+        updateUI()
+    }
+
+    private fun stopTimerService() {
+        setMonitoringEnabled(this, false)
+        val intent = Intent(this, TimerService::class.java)
+        stopService(intent)
+        Toast.makeText(this, "Monitoring stopped", Toast.LENGTH_SHORT).show()
+        updateUI()
+    }
+
+    private fun restartServiceIfRunning() {
+        if (isMonitoringEnabled(this)) {
+            stopService(Intent(this, TimerService::class.java))
+            startForegroundService(Intent(this, TimerService::class.java))
+        }
     }
 }
 
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onSaveAndStart: () -> Unit = {},
-    onChooseApps: () -> Unit = {}
+    isMonitoring: Boolean = false,
+    onStart: () -> Unit = {},
+    onStop: () -> Unit = {},
+    onChooseApps: () -> Unit = {},
+    onClose: () -> Unit = {},
+    onSettingsChanged: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
-    // Load saved value (default 10 minutes)
     var minutes by remember { mutableStateOf(prefs.getInt("time_limit", 10).toString()) }
 
     Column(
@@ -154,19 +181,38 @@ fun SettingsScreen(
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (isMonitoring) {
+            Text(
+                text = "● Monitoring active",
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else {
+            Text(
+                text = "○ Not monitoring",
+                color = MaterialTheme.colorScheme.outline,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Set your time limit for social media",
+            text = "Time limit (minutes)",
             style = MaterialTheme.typography.bodyLarge
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = minutes,
-            onValueChange = {
-                minutes = it.filter { char -> char.isDigit() }
+            onValueChange = { newValue ->
+                minutes = newValue.filter { char -> char.isDigit() }
+                val timeLimit = minutes.toIntOrNull() ?: 10
+                prefs.edit().putInt("time_limit", timeLimit).apply()
+                onSettingsChanged()
             },
             label = { Text("Minutes") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -176,39 +222,42 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Choose Apps button
         OutlinedButton(
             onClick = onChooseApps,
             modifier = Modifier.fillMaxWidth(0.7f)
         ) {
-            Text(
-                "Choose Apps"
-            )
+            Text("Choose Apps")
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedButton(
-                onClick = {
-                    (context as? ComponentActivity)?.finish()
-                },
+                onClick = onClose,
                 modifier = Modifier.width(120.dp)
             ) {
-                Text("Cancel")
+                Text("Close")
             }
 
-            Button(
-                onClick = {
-                    val timeLimit = minutes.toIntOrNull() ?: 10
-                    prefs.edit().putInt("time_limit", timeLimit).apply()
-                    onSaveAndStart()
-                },
-                modifier = Modifier.width(120.dp)
-            ) {
-                Text("Save")
+            if (isMonitoring) {
+                Button(
+                    onClick = onStop,
+                    modifier = Modifier.width(120.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Stop")
+                }
+            } else {
+                Button(
+                    onClick = onStart,
+                    modifier = Modifier.width(120.dp)
+                ) {
+                    Text("Start")
+                }
             }
         }
     }
