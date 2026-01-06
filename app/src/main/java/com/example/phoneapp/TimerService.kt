@@ -20,7 +20,10 @@ class TimerService : Service() {
     private var timeLimit = 10 // minutes
     private var firstNotificationSent = false
     private var monitoredApps = setOf<String>()
-    private var wasMonitoredAppActive = false
+
+    // Break tracking
+    private var breakStartTime: Long? = null
+    private val MINIMUM_BREAK_SECONDS = 30
 
     companion object {
         const val CHANNEL_ID = "social_detox_channel"
@@ -56,7 +59,7 @@ class TimerService : Service() {
         // Reset state
         timeElapsed = 0
         firstNotificationSent = false
-        wasMonitoredAppActive = false
+        breakStartTime = null
 
         // Start foreground service with notification
         val notification = buildForegroundNotification()
@@ -71,14 +74,28 @@ class TimerService : Service() {
     private fun startMonitoring() {
         handler.post(object : Runnable {
             override fun run() {
-                // Check if a monitored app is currently in foreground
                 val currentApp = getForegroundApp()
                 val isMonitoredAppActive = monitoredApps.contains(currentApp)
 
                 if (isMonitoredAppActive) {
-                    // Monitored app is active - count time
+                    // User is in a monitored app
+
+                    if (breakStartTime != null) {
+                        // User was on a break - check how long
+                        val breakDuration = (System.currentTimeMillis() - breakStartTime!!) / 1000
+
+                        if (breakDuration >= MINIMUM_BREAK_SECONDS) {
+                            // Real break (30+ seconds) - reset timer
+                            timeElapsed = 0
+                            firstNotificationSent = false
+                        }
+                        // Otherwise: short break - continue from where we left off
+
+                        breakStartTime = null
+                    }
+
+                    // Count time
                     timeElapsed++
-                    wasMonitoredAppActive = true
 
                     val timeLimitSeconds = timeLimit * 60
 
@@ -96,17 +113,31 @@ class TimerService : Service() {
                         }
                     }
 
-                    // Update foreground notification with time
+                    // Update notification
                     updateForegroundNotification(timeElapsed)
 
-                } else if (wasMonitoredAppActive) {
-                    // User left monitored app - RESET timer!
-                    timeElapsed = 0
-                    firstNotificationSent = false
-                    wasMonitoredAppActive = false
+                } else {
+                    // User is NOT in a monitored app
 
-                    // Update notification to show reset
-                    updateForegroundNotificationIdle()
+                    if (breakStartTime == null && timeElapsed > 0) {
+                        // Just started a break - record the time
+                        breakStartTime = System.currentTimeMillis()
+                        updateForegroundNotificationOnBreak()
+                    } else if (breakStartTime != null) {
+                        // Already on break - check if it's a real break now
+                        val breakDuration = (System.currentTimeMillis() - breakStartTime!!) / 1000
+
+                        if (breakDuration >= MINIMUM_BREAK_SECONDS) {
+                            // Real break achieved!
+                            timeElapsed = 0
+                            firstNotificationSent = false
+                            breakStartTime = null
+                            updateForegroundNotificationBreakComplete()
+                        } else {
+                            // Still in short break window
+                            updateForegroundNotificationOnBreak()
+                        }
+                    }
                 }
 
                 // Continue checking every second
@@ -118,7 +149,7 @@ class TimerService : Service() {
     private fun getForegroundApp(): String? {
         val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60 // Last 1 minute
+        val startTime = endTime - 1000 * 60
 
         val usageStatsList = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY,
@@ -130,7 +161,6 @@ class TimerService : Service() {
             return null
         }
 
-        // Find the most recently used app
         var recentApp: String? = null
         var recentTime = 0L
 
@@ -182,10 +212,26 @@ class TimerService : Service() {
         notificationManager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun updateForegroundNotificationIdle() {
+    private fun updateForegroundNotificationOnBreak() {
+        val minutes = timeElapsed / 60
+        val secs = timeElapsed % 60
+        val timeText = String.format("%d:%02d", minutes, secs)
+
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle("Social Detox - Paused")
+            .setContentText("Timer paused at $timeText. Stay away for 30s to reset!")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun updateForegroundNotificationBreakComplete() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Social Detox Active")
-            .setContentText("Great! You took a break. Timer reset.")
+            .setContentText("Great! You took a real break. Timer reset. 🎉")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
@@ -208,14 +254,12 @@ class TimerService : Service() {
 
     private fun showOverlayOrNotification(title: String, message: String) {
         if (Settings.canDrawOverlays(this)) {
-            // Show overlay
             val intent = Intent(this, OverlayService::class.java).apply {
                 putExtra(OverlayService.EXTRA_TITLE, title)
                 putExtra(OverlayService.EXTRA_MESSAGE, message)
             }
             startService(intent)
         } else {
-            // Fallback to notification
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(message)
