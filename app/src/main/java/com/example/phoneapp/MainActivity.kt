@@ -26,6 +26,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.phoneapp.ui.theme.PhoneAppTheme
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.material3.LocalTextStyle
 
 class MainActivity : ComponentActivity() {
 
@@ -200,7 +202,7 @@ fun SettingsScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Time limit (minutes)",
+            text = "Time limit",
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -209,15 +211,18 @@ fun SettingsScreen(
         OutlinedTextField(
             value = minutes,
             onValueChange = { newValue ->
-                minutes = newValue.filter { char -> char.isDigit() }
-                val timeLimit = minutes.toIntOrNull() ?: 10
+                // Allow only digits, max 2 characters
+                val filtered = newValue.filter { it.isDigit() }.take(2)
+                minutes = filtered
+                val timeLimit = filtered.toIntOrNull() ?: 10
                 prefs.edit().putInt("time_limit", timeLimit).apply()
                 onSettingsChanged()
             },
             label = { Text("Minutes") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
-            modifier = Modifier.width(150.dp)
+            modifier = Modifier.width(100.dp),
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center)
         )
 
         Spacer(modifier = Modifier.height(24.dp))
