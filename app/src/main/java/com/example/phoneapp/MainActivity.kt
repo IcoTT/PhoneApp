@@ -132,6 +132,20 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startTimerService() {
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val monitoredApps = prefs.getStringSet("monitored_apps", emptySet()) ?: emptySet()
+        val timeLimit = prefs.getInt("time_limit", 10)
+        
+        if (monitoredApps.isEmpty()) {
+            Toast.makeText(this, "Please select at least one app to monitor", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (timeLimit <= 0) {
+            Toast.makeText(this, "Please set a valid time limit", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         setMonitoringEnabled(this, true)
         val intent = Intent(this, TimerService::class.java)
         startForegroundService(intent)
