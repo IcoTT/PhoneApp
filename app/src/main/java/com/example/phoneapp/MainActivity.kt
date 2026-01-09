@@ -29,7 +29,6 @@ import com.example.phoneapp.ui.theme.PhoneAppTheme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 
 class MainActivity : ComponentActivity() {
 
@@ -185,6 +184,7 @@ fun SettingsScreen(
     val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
 
     var minutes by remember { mutableStateOf(prefs.getInt("time_limit", 10).toString()) }
+    var showAbout by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -193,14 +193,23 @@ fun SettingsScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // Main heading
         Text(
             text = "Social Detox",
             fontSize = 28.sp,
             style = MaterialTheme.typography.headlineMedium
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        // Subheading
+        Text(
+            text = "subheading",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Status indicator
         if (isMonitoring) {
             Text(
                 text = "● Monitoring active",
@@ -227,7 +236,6 @@ fun SettingsScreen(
         OutlinedTextField(
             value = minutes,
             onValueChange = { newValue ->
-                // Allow only digits, max 2 characters
                 val filtered = newValue.filter { it.isDigit() }.take(2)
                 minutes = filtered
                 val timeLimit = filtered.toIntOrNull() ?: 10
@@ -252,6 +260,7 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Close and Start/Stop buttons
         Row(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -279,6 +288,34 @@ fun SettingsScreen(
                 ) {
                     Text("Start")
                 }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // About button - same style as other buttons
+        OutlinedButton(
+            onClick = { showAbout = !showAbout },
+            modifier = Modifier.width(180.dp)
+        ) {
+            Text(if (showAbout) "Hide" else "About this app")
+        }
+
+        // Fixed height container for About text
+        Box(
+            modifier = Modifier
+                .height(60.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            if (showAbout) {
+                Text(
+                    text = "Mindful breaks from social media. Get gentle reminders and simple techniques to disconnect.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }
