@@ -28,6 +28,8 @@ import androidx.core.content.ContextCompat
 import com.example.phoneapp.ui.theme.PhoneAppTheme
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 
 class MainActivity : ComponentActivity() {
 
@@ -202,7 +204,7 @@ fun SettingsScreen(
         if (isMonitoring) {
             Text(
                 text = "● Monitoring active",
-                color = MaterialTheme.colorScheme.primary,
+                color = Color(0xFF4CAF50),
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
