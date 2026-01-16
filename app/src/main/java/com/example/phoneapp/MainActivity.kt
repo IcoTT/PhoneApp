@@ -53,18 +53,23 @@ class MainActivity : ComponentActivity() {
         if (pendingAppSelection && hasUsageStatsPermission()) {
             pendingAppSelection = false
             startActivity(Intent(this, AppSelectionActivity::class.java))
-        } else {
-            updateUI()
         }
+        // Always refresh UI when returning to this screen
+        updateUI()
     }
 
     private fun updateUI() {
+        val currentMonitoring = isMonitoringEnabled(this)
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val appsSelected = (prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0) > 0
+
         setContent {
             PhoneAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
-                        isMonitoring = isMonitoringEnabled(this),
+                        isMonitoring = currentMonitoring,
+                        hasAppsSelected = appsSelected,  // Add this parameter
                         onStart = { checkAllPermissionsAndStart() },
                         onStop = { stopTimerService() },
                         onChooseApps = { openAppSelection() },
@@ -174,6 +179,7 @@ class MainActivity : ComponentActivity() {
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     isMonitoring: Boolean = false,
+    hasAppsSelected: Boolean = false,
     onStart: () -> Unit = {},
     onStop: () -> Unit = {},
     onChooseApps: () -> Unit = {},
@@ -185,6 +191,8 @@ fun SettingsScreen(
 
     var minutes by remember { mutableStateOf(prefs.getInt("time_limit", 10).toString()) }
     var showAbout by remember { mutableStateOf(false) }
+
+    val needsSetup = !hasAppsSelected
 
     Column(
         modifier = modifier
@@ -251,11 +259,42 @@ fun SettingsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedButton(
-            onClick = onChooseApps,
-            modifier = Modifier.fillMaxWidth(0.7f)
+        // Check if apps are selected
+        val selectedAppsCount = prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0
+        val needsSetup = selectedAppsCount == 0
+
+        // Fixed height container for hint (prevents layout shift)
+        Box(
+            modifier = Modifier.height(24.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text("Choose Apps")
+            if (needsSetup) {
+                Text(
+                    text = "↓ Start here",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFF4CAF50)
+                )
+            }
+        }
+
+        // Choose Apps button
+        if (needsSetup) {
+            Button(
+                onClick = onChooseApps,
+                modifier = Modifier.fillMaxWidth(0.7f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                Text("Choose Apps")
+            }
+        } else {
+            OutlinedButton(
+                onClick = onChooseApps,
+                modifier = Modifier.fillMaxWidth(0.7f)
+            ) {
+                Text("Choose Apps")
+            }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
