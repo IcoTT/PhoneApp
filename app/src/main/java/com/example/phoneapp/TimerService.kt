@@ -38,13 +38,102 @@ class TimerService : Service() {
 
     // Techniques as Pair(subheading, body)
     private val techniques = listOf(
+        // 1
         Pair(
             "Support contact with yourself.",
-            "This will weaken the algorithm's influence on your will.\n" +
+            "This will weaken the algorithm's influence on your will.\n\n" +
+
                     "Let's do it like this:\n" +
                     "→ Take 5 deep breaths\n" +
-                    "→ Watch your belly rise and fall\n" +
+                    "→ Watch your belly rise and fall\n\n" +
+
                     "You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling."
+        ),
+        // 2
+        Pair(
+            "Activate your calm like a CIA agent…",
+            "The algorithm will stop chasing you.\n\n" +
+
+                    "Let's do it like this:\n" +
+                    "→ Without moving your head or eyes, notice what's at the very edge of your field of vision.\n" +
+                    "→ For a moment, observe everything you can see this way.\n\n" +
+
+                    "You've just reduced the stress that drives you to scroll. If you want, you can stop."
+        ),
+        // 3
+        Pair(
+            "Use your hearing.",
+            "Your mind can't focus on 2 things at once.\n\n"+
+
+                "Use this:\n"+
+                "→ What's the quietest sound you can hear right now?\n"+
+                "→ Focus on it for 10 seconds\n\n"+
+
+                "You've just interrupted the flow of constant thoughts and reduced your stress. If you want, you can leave."
+        ),
+        // 4
+        Pair(
+            "Good stress is never bad.",
+            "It will pull you out of anxious scrolling.\n\n" +
+
+            "Do it like this: \n"+
+            "→ Calmly breathe in.\n"+
+            "→ Calmly breathe out and hold.\n" +
+            "→ Count how long you can last without breathing. When you feel the first urge to breathe, take a breath.\n\n"+
+
+            "You've just created a window, thanks to which, if you want, you can toss your phone away."
+        ),
+        // 5
+        Pair(
+            "Time is passing.\n",
+
+            "In 30 minutes:\n"+
+            "→ If you close Instagram now - how will you feel?\n"+
+            "→ If you keep scrolling - how will you feel?\n\n"+
+
+            "Choose which YOU you want to be."
+        ),
+        // 6
+        Pair(
+            "This is a challenge!\n",
+
+            "Don't move to the next reel until you've taken 5 breaths.\n"+
+            "→ 5... 4... 3...\n\n" +
+
+            "Now you can continue, but you've created space.\n"+
+            "You don't have to."
+        ),
+        //7
+        Pair(
+            "Your attention is the key.\n",
+
+            "Did you notice your right big toe on your left foot? No? Well, now you do \uD83D\uDE0A .\n"+
+            "→ Give it 5 exhales of attention\n\n"+
+
+            "A space has emerged in your mind. What will you do with it?\n\n" +
+
+            "You've just broken the chain of scrolling. If you want, you can give your attention to something else."
+        ),
+        // 8
+        Pair(
+            "It's completely normal that you don't feel like stopping.",
+            "It was designed that way.\n\n"+
+
+            "But don't forget..\n\n" +
+
+                    "If you want, you can."
+        ),
+        // 9
+        Pair(
+            "Fun fact:",
+            "→ Instagram will still be here in an hour\n"+
+            "→ Tomorrow too\n"+
+            "→ Even in 10 years\n\n"+
+
+                    "But this moment of your life?\n"+
+            "You only get it once.\n\n"+
+
+            "What will you do with it?"
         )
     )
 
