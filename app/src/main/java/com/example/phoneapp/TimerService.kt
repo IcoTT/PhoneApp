@@ -12,13 +12,16 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class TimerService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var timeElapsed = 0
     private var timeLimit = 10 // minutes
-    private var firstNotificationSent = false
+    private var timeLimitReachedThisSession = false
     private var monitoredApps = setOf<String>()
 
     // Break tracking
@@ -30,16 +33,17 @@ class TimerService : Service() {
         const val NOTIFICATION_ID = 1
         const val SUBSEQUENT_INTERVAL = 180 // 3 minutes in seconds
         const val CHECK_INTERVAL = 1000L // Check every 1 second
+        const val PREF_FIRST_MESSAGE_DATE = "first_message_date"
     }
 
     // Techniques as Pair(subheading, body)
     private val techniques = listOf(
         Pair(
             "Support contact with yourself.",
-            "This will weaken the algorithm's influence on your will.\n\n" +
+            "This will weaken the algorithm's influence on your will.\n" +
                     "Let's do it like this:\n" +
                     "→ Take 5 deep breaths\n" +
-                    "→ Watch your belly rise and fall\n\n" +
+                    "→ Watch your belly rise and fall\n" +
                     "You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling."
         )
     )
@@ -55,9 +59,9 @@ class TimerService : Service() {
         timeLimit = prefs.getInt("time_limit", 10)
         monitoredApps = prefs.getStringSet("monitored_apps", emptySet()) ?: emptySet()
 
-        // Reset state
+        // Reset session state
         timeElapsed = 0
-        firstNotificationSent = false
+        timeLimitReachedThisSession = false
         breakStartTime = null
 
         // Start foreground service with notification
@@ -68,6 +72,22 @@ class TimerService : Service() {
         startMonitoring()
 
         return START_STICKY
+    }
+
+    private fun getTodayDateString(): String {
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        return dateFormat.format(Date())
+    }
+
+    private fun hasShownFirstMessageToday(): Boolean {
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val lastDate = prefs.getString(PREF_FIRST_MESSAGE_DATE, null)
+        return lastDate == getTodayDateString()
+    }
+
+    private fun markFirstMessageShownToday() {
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putString(PREF_FIRST_MESSAGE_DATE, getTodayDateString()).apply()
     }
 
     private fun startMonitoring() {
@@ -86,7 +106,7 @@ class TimerService : Service() {
                         if (breakDuration >= MINIMUM_BREAK_SECONDS) {
                             // Real break (30+ seconds) - reset timer
                             timeElapsed = 0
-                            firstNotificationSent = false
+                            timeLimitReachedThisSession = false
                         }
                         // Otherwise: short break - continue from where we left off
 
@@ -98,16 +118,24 @@ class TimerService : Service() {
 
                     val timeLimitSeconds = timeLimit * 60
 
-                    // First notification when time limit reached
-                    if (timeElapsed >= timeLimitSeconds && !firstNotificationSent) {
-                        showFirstMessage()
-                        firstNotificationSent = true
+                    // Time limit reached for this session
+                    if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
+                        timeLimitReachedThisSession = true
+                        
+                        // Show first message only if not shown today
+                        if (!hasShownFirstMessageToday()) {
+                            showFirstMessage()
+                            markFirstMessageShownToday()
+                        } else {
+                            // Already shown first message today, show technique instead
+                            showTechniqueMessage()
+                        }
                     }
 
-                    // Subsequent notifications every 3 minutes after first
-                    if (firstNotificationSent) {
-                        val timeAfterFirst = timeElapsed - timeLimitSeconds
-                        if (timeAfterFirst > 0 && timeAfterFirst % SUBSEQUENT_INTERVAL == 0) {
+                    // Subsequent notifications every 3 minutes after time limit reached
+                    if (timeLimitReachedThisSession) {
+                        val timeAfterLimit = timeElapsed - timeLimitSeconds
+                        if (timeAfterLimit > 0 && timeAfterLimit % SUBSEQUENT_INTERVAL == 0) {
                             showTechniqueMessage()
                         }
                     }
@@ -129,7 +157,7 @@ class TimerService : Service() {
                         if (breakDuration >= MINIMUM_BREAK_SECONDS) {
                             // Real break achieved!
                             timeElapsed = 0
-                            firstNotificationSent = false
+                            timeLimitReachedThisSession = false
                             breakStartTime = null
                             updateForegroundNotificationBreakComplete()
                         } else {
