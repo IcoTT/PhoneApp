@@ -51,7 +51,6 @@ class TimerService : Service() {
             You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling.
             """.trimIndent()
         ),
-
         // 2
         Pair(
             "Activate your calm like a CIA agent…",
@@ -65,8 +64,6 @@ class TimerService : Service() {
             You've just reduced the stress that drives you to scroll. If you want, you can stop.
             """.trimIndent()
         ),
-
-
         // 3
         Pair(
             "Use your hearing.",
@@ -80,7 +77,6 @@ class TimerService : Service() {
             You've just interrupted the flow of constant thoughts and reduced your stress. If you want, you can leave.
             """.trimIndent()
         ),
-
         // 4
         Pair(
             "Good stress is never bad.",
@@ -117,7 +113,6 @@ class TimerService : Service() {
             You don't have to.
             """.trimIndent()
         ),
-
         // 7
         Pair(
             "Your attention is the key.",
@@ -130,33 +125,31 @@ class TimerService : Service() {
             You've just broken the chain of scrolling. If you want, you can give your attention to something else.
             """.trimIndent()
         ),
+        // 8
+        Pair(
+            "It's completely normal that you don't feel like stopping.",
+            """
+            It was designed that way.
 
-       // 8
-       Pair(
-           "It's completely normal that you don't feel like stopping.",
-           """
-           It was designed that way.
+            But don't forget..
 
-           But don't forget..
+            If you want, you can.
+            """.trimIndent()
+        ),
+        // 9
+        Pair(
+            "Fun fact:",
+            """
+            → Instagram will still be here in an hour
+            → Tomorrow too
+            → Even in 10 years
 
-           If you want, you can.
-           """.trimIndent()
-       ),
+            But this moment of your life?
+            You only get it once.
 
-      // 9
-      Pair(
-          "Fun fact:",
-          """
-          → Instagram will still be here in an hour
-          → Tomorrow too
-          → Even in 10 years
-
-          But this moment of your life?
-          You only get it once.
-
-          What will you do with it?
-          """.trimIndent()
-      )
+            What will you do with it?
+            """.trimIndent()
+        )
     )
 
     override fun onCreate() {
