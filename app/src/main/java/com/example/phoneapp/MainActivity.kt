@@ -212,7 +212,8 @@ fun SettingsScreen(
         Text(
             text = "Beat the algorithm and let your inner strength shine",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(16.dp))
