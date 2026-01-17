@@ -18,15 +18,28 @@
         android:textStyle="bold"
         android:gravity="center" />
 
+    <!-- Subheading: first line with subtle emphasis -->
+    <TextView
+        android:id="@+id/overlay_subheading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Subheading here"
+        android:textColor="#444444"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:gravity="start" />
+
+    <!-- Rest of the message -->
     <TextView
         android:id="@+id/overlay_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="4dp"
         android:text="Message here"
         android:textColor="#555555"
         android:textSize="16sp"
-        android:gravity="center" />
+        android:gravity="start" />
 
     <LinearLayout
         android:layout_width="match_parent"

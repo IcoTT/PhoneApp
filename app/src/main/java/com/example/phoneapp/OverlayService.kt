@@ -19,6 +19,7 @@ class OverlayService : Service() {
 
     companion object {
         const val EXTRA_TITLE = "extra_title"
+        const val EXTRA_SUBHEADING = "extra_subheading"
         const val EXTRA_MESSAGE = "extra_message"
     }
 
@@ -26,14 +27,15 @@ class OverlayService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val title = intent?.getStringExtra(EXTRA_TITLE) ?: "Time's Up!"
+        val subheading = intent?.getStringExtra(EXTRA_SUBHEADING) ?: ""
         val message = intent?.getStringExtra(EXTRA_MESSAGE) ?: "Take a break."
 
-        showOverlay(title, message)
+        showOverlay(title, subheading, message)
 
         return START_NOT_STICKY
     }
 
-    private fun showOverlay(title: String, message: String) {
+    private fun showOverlay(title: String, subheading: String, message: String) {
         if (overlayView != null) {
             removeOverlay()
         }
@@ -57,6 +59,16 @@ class OverlayService : Service() {
 
         // Set up views
         overlayView?.findViewById<TextView>(R.id.overlay_title)?.text = title
+        
+        // Handle subheading - hide if empty
+        val subheadingView = overlayView?.findViewById<TextView>(R.id.overlay_subheading)
+        if (subheading.isNotEmpty()) {
+            subheadingView?.text = subheading
+            subheadingView?.visibility = View.VISIBLE
+        } else {
+            subheadingView?.visibility = View.GONE
+        }
+        
         overlayView?.findViewById<TextView>(R.id.overlay_message)?.text = message
 
         overlayView?.findViewById<Button>(R.id.btn_ok)?.setOnClickListener {

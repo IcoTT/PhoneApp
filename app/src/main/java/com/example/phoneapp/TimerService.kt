@@ -32,17 +32,16 @@ class TimerService : Service() {
         const val CHECK_INTERVAL = 1000L // Check every 1 second
     }
 
+    // Techniques as Pair(subheading, body)
     private val techniques = listOf(
-        "Take a deep breath. Inhale for 4 seconds, hold for 4, exhale for 4.",
-        "Listen deeply to the most silent sound you can hear around you.",
-        "Feel your feet on the ground. Notice the sensation for 10 seconds.",
-        "Look away from the screen. Find 3 things of the same color in your room.",
-        "Roll your shoulders back slowly. Release the tension you're holding.",
-        "Close your eyes for 10 seconds. Just be present with yourself.",
-        "Ask yourself: What do I really need right now?",
-        "Think of one person you're grateful for today.",
-        "Notice your posture. Sit up straight and take a slow breath.",
-        "Put your hand on your heart. Feel it beating for a moment."
+        Pair(
+            "Support contact with yourself.",
+            "This will weaken the algorithm's influence on your will.\n\n" +
+                    "Let's do it like this:\n" +
+                    "→ Take 5 deep breaths\n" +
+                    "→ Watch your belly rise and fall\n\n" +
+                    "You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling."
+        )
     )
 
     override fun onCreate() {
@@ -243,27 +242,31 @@ class TimerService : Service() {
     private fun showFirstMessage() {
         val title = "Hey, just a gentle reminder 💙"
         val message = "You've been on for $timeLimit minutes. Maybe a good moment for a break?"
-        showOverlayOrNotification(title, message)
+        showOverlayOrNotification(title, "", message)
     }
 
     private fun showTechniqueMessage() {
         val title = "Try this quick technique ✨"
-        val message = techniques.random()
-        showOverlayOrNotification(title, message)
+        val technique = techniques.random()
+        showOverlayOrNotification(title, technique.first, technique.second)
     }
 
-    private fun showOverlayOrNotification(title: String, message: String) {
+    private fun showOverlayOrNotification(title: String, subheading: String, message: String) {
         if (Settings.canDrawOverlays(this)) {
             val intent = Intent(this, OverlayService::class.java).apply {
                 putExtra(OverlayService.EXTRA_TITLE, title)
+                putExtra(OverlayService.EXTRA_SUBHEADING, subheading)
                 putExtra(OverlayService.EXTRA_MESSAGE, message)
             }
             startService(intent)
         } else {
+            // For notifications, combine subheading and message
+            val fullMessage = if (subheading.isNotEmpty()) "$subheading\n$message" else message
+            
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
-                .setContentText(message)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+                .setContentText(fullMessage)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(fullMessage))
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true)
