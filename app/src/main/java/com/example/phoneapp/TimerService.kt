@@ -41,100 +41,122 @@ class TimerService : Service() {
         // 1
         Pair(
             "Support contact with yourself.",
-            "This will weaken the algorithm's influence on your will.\n\n" +
+            """
+            This will weaken the algorithm's influence on your will.
 
-                    "Let's do it like this:\n" +
-                    "→ Take 5 deep breaths\n" +
-                    "→ Watch your belly rise and fall\n\n" +
+            Let's do it like this:
+            → Take 5 deep breaths
+            → Watch your belly rise and fall
 
-                    "You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling."
+            You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling.
+            """.trimIndent()
         ),
+
         // 2
         Pair(
             "Activate your calm like a CIA agent…",
-            "The algorithm will stop chasing you.\n\n" +
+            """
+            The algorithm will stop chasing you.
 
-                    "Let's do it like this:\n" +
-                    "→ Without moving your head or eyes, notice what's at the very edge of your field of vision.\n" +
-                    "→ For a moment, observe everything you can see this way.\n\n" +
+            Let's do it like this:
+            → Without moving your head or eyes, notice what's at the very edge of your field of vision.
+            → For a moment, observe everything you can see this way.
 
-                    "You've just reduced the stress that drives you to scroll. If you want, you can stop."
+            You've just reduced the stress that drives you to scroll. If you want, you can stop.
+            """.trimIndent()
         ),
+
+
         // 3
         Pair(
             "Use your hearing.",
-            "Your mind can't focus on 2 things at once.\n\n"+
+            """
+            Your mind can't focus on 2 things at once.
 
-                "Use this:\n"+
-                "→ What's the quietest sound you can hear right now?\n"+
-                "→ Focus on it for 10 seconds\n\n"+
+            Use this:
+            → What's the quietest sound you can hear right now?
+            → Focus on it for 10 seconds
 
-                "You've just interrupted the flow of constant thoughts and reduced your stress. If you want, you can leave."
+            You've just interrupted the flow of constant thoughts and reduced your stress. If you want, you can leave.
+            """.trimIndent()
         ),
+
         // 4
         Pair(
             "Good stress is never bad.",
-            "It will pull you out of anxious scrolling.\n\n" +
+            """
+            It will pull you out of anxious scrolling.
 
-            "Do it like this: \n"+
-            "→ Calmly breathe in.\n"+
-            "→ Calmly breathe out and hold.\n" +
-            "→ Count how long you can last without breathing. When you feel the first urge to breathe, take a breath.\n\n"+
+            Do it like this:
+            → Calmly breathe in.
+            → Calmly breathe out and hold.
+            → Count how long you can last without breathing. When you feel the first urge to breathe, take a breath.
 
-            "You've just created a window, thanks to which, if you want, you can toss your phone away."
+            You've just created a window, thanks to which, if you want, you can toss your phone away.
+            """.trimIndent()
         ),
         // 5
         Pair(
-            "Time is passing.\n",
+            "Time is passing.",
+            """
+            In 30 minutes:
+            → If you close Instagram now - how will you feel?
+            → If you keep scrolling - how will you feel?
 
-            "In 30 minutes:\n"+
-            "→ If you close Instagram now - how will you feel?\n"+
-            "→ If you keep scrolling - how will you feel?\n\n"+
-
-            "Choose which YOU you want to be."
+            Choose which YOU you want to be.
+            """.trimIndent()
         ),
         // 6
         Pair(
-            "This is a challenge!\n",
+            "This is a challenge!",
+            """
+            Don't move to the next reel until you've taken 5 breaths.
+            → 5... 4... 3...
 
-            "Don't move to the next reel until you've taken 5 breaths.\n"+
-            "→ 5... 4... 3...\n\n" +
-
-            "Now you can continue, but you've created space.\n"+
-            "You don't have to."
+            Now you can continue, but you've created space.
+            You don't have to.
+            """.trimIndent()
         ),
-        //7
+
+        // 7
         Pair(
-            "Your attention is the key.\n",
+            "Your attention is the key.",
+            """
+            Did you notice your right big toe on your left foot? No? Well, now you do 😊.
+            → Give it 5 exhales of attention
 
-            "Did you notice your right big toe on your left foot? No? Well, now you do \uD83D\uDE0A .\n"+
-            "→ Give it 5 exhales of attention\n\n"+
+            A space has emerged in your mind. What will you do with it?
 
-            "A space has emerged in your mind. What will you do with it?\n\n" +
-
-            "You've just broken the chain of scrolling. If you want, you can give your attention to something else."
+            You've just broken the chain of scrolling. If you want, you can give your attention to something else.
+            """.trimIndent()
         ),
-        // 8
-        Pair(
-            "It's completely normal that you don't feel like stopping.",
-            "It was designed that way.\n\n"+
 
-            "But don't forget..\n\n" +
+       // 8
+       Pair(
+           "It's completely normal that you don't feel like stopping.",
+           """
+           It was designed that way.
 
-                    "If you want, you can."
-        ),
-        // 9
-        Pair(
-            "Fun fact:",
-            "→ Instagram will still be here in an hour\n"+
-            "→ Tomorrow too\n"+
-            "→ Even in 10 years\n\n"+
+           But don't forget..
 
-                    "But this moment of your life?\n"+
-            "You only get it once.\n\n"+
+           If you want, you can.
+           """.trimIndent()
+       ),
 
-            "What will you do with it?"
-        )
+      // 9
+      Pair(
+          "Fun fact:",
+          """
+          → Instagram will still be here in an hour
+          → Tomorrow too
+          → Even in 10 years
+
+          But this moment of your life?
+          You only get it once.
+
+          What will you do with it?
+          """.trimIndent()
+      )
     )
 
     override fun onCreate() {
@@ -210,7 +232,7 @@ class TimerService : Service() {
                     // Time limit reached for this session
                     if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
                         timeLimitReachedThisSession = true
-                        
+
                         // Show first message only if not shown today
                         if (!hasShownFirstMessageToday()) {
                             showFirstMessage()
@@ -379,7 +401,7 @@ class TimerService : Service() {
         } else {
             // For notifications, combine subheading and message
             val fullMessage = if (subheading.isNotEmpty()) "$subheading\n$message" else message
-            
+
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(fullMessage)
