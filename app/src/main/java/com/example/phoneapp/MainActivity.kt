@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        ensureServiceStateConsistent()
         updateUI()
     }
 
@@ -55,10 +56,22 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(this, AppSelectionActivity::class.java))
         }
         // Always refresh UI when returning to this screen
+        ensureServiceStateConsistent()
         updateUI()
     }
 
+    private fun ensureServiceStateConsistent() {
+        val prefEnabled = isMonitoringEnabled(this)
+        val serviceRunning = isServiceRunning(this)
+
+        // If preference says enabled but service isn't running, restart the service
+        if (prefEnabled && !serviceRunning) {
+            startForegroundService(Intent(this, TimerService::class.java))
+        }
+    }
+
     private fun updateUI() {
+        // Use preference for UI - if it says enabled, service is either running or being started
         val currentMonitoring = isMonitoringEnabled(this)
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val appsSelected = (prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0) > 0
@@ -69,7 +82,7 @@ class MainActivity : ComponentActivity() {
                     SettingsScreen(
                         modifier = Modifier.padding(innerPadding),
                         isMonitoring = currentMonitoring,
-                        hasAppsSelected = appsSelected,  // Add this parameter
+                        hasAppsSelected = appsSelected,
                         onStart = { checkAllPermissionsAndStart() },
                         onStop = { stopTimerService() },
                         onChooseApps = { openAppSelection() },
