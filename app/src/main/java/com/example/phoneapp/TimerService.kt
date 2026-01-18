@@ -230,9 +230,10 @@ class TimerService : Service() {
                         if (!hasShownFirstMessageToday()) {
                             showFirstMessage()
                             markFirstMessageShownToday()
+                        } else {
+                            // Already shown first message today, show technique instead
+                            showTechniqueMessage()
                         }
-                        // If already shown first message today, don't show anything now
-                        // Techniques will start showing at the next 3-minute interval
                     }
 
                     // Subsequent notifications every 3 minutes after time limit reached
