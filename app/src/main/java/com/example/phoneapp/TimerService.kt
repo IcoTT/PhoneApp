@@ -230,10 +230,9 @@ class TimerService : Service() {
                         if (!hasShownFirstMessageToday()) {
                             showFirstMessage()
                             markFirstMessageShownToday()
-                        } else {
-                            // Already shown first message today, show technique instead
-                            showTechniqueMessage()
                         }
+                        // If already shown first message today, don't show anything now
+                        // Techniques will start showing at the next 3-minute interval
                     }
 
                     // Subsequent notifications every 3 minutes after time limit reached
@@ -280,7 +279,7 @@ class TimerService : Service() {
     private fun getForegroundApp(): String? {
         val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val endTime = System.currentTimeMillis()
-        val startTime = endTime - 1000 * 60
+        val startTime = endTime - 1000 * 60 // Query last minute
 
         val usageStatsList = usageStatsManager.queryUsageStats(
             UsageStatsManager.INTERVAL_DAILY,
