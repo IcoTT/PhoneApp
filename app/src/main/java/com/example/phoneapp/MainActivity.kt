@@ -272,11 +272,7 @@ fun SettingsScreen(
         )
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Check if apps are selected
-        val selectedAppsCount = prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0
-        val needsSetup = selectedAppsCount == 0
-
+        
         // Fixed height container for hint (prevents layout shift)
         Box(
             modifier = Modifier.height(24.dp),
