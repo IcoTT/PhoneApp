@@ -28,6 +28,9 @@ class TimerService : Service() {
     private var breakStartTime: Long? = null
     private val MINIMUM_BREAK_SECONDS = 30
 
+    // Technique rotation - ensures all techniques shown before repeating
+    private var remainingTechniques = mutableListOf<Int>()
+
     companion object {
         const val CHANNEL_ID = "social_detox_channel"
         const val NOTIFICATION_ID = 1
@@ -379,8 +382,18 @@ class TimerService : Service() {
 
     private fun showTechniqueMessage() {
         val title = "Try this quick technique ✨"
-        val technique = techniques.random()
+        val technique = getNextTechnique()
         showOverlayOrNotification(title, technique.first, technique.second)
+    }
+
+    private fun getNextTechnique(): Pair<String, String> {
+        // If all techniques have been shown, reshuffle
+        if (remainingTechniques.isEmpty()) {
+            remainingTechniques = techniques.indices.shuffled().toMutableList()
+        }
+        // Get and remove the next technique index
+        val index = remainingTechniques.removeAt(0)
+        return techniques[index]
     }
 
     private fun showOverlayOrNotification(title: String, subheading: String, message: String) {
