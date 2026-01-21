@@ -234,13 +234,13 @@ fun SettingsScreen(
         // Status indicator
         if (isMonitoring) {
             Text(
-                text = "● Monitoring active",
+                text = "\uD83D\uDFE2 Monitoring active",
                 color = Color(0xFF4CAF50),
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
             Text(
-                text = "○ Not monitoring",
+                text = "\u26AA Not monitoring",
                 color = MaterialTheme.colorScheme.outline,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -280,7 +280,7 @@ fun SettingsScreen(
         ) {
             if (needsSetup) {
                 Text(
-                    text = "↓ Start here",
+                    text = "\uD83D\uDC47 Start here",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF4CAF50)
                 )
