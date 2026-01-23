@@ -224,25 +224,28 @@ class TimerService : Service() {
                     timeElapsed++
 
                     val timeLimitSeconds = timeLimit * 60
+                    val firstMessageAlreadyShown = hasShownFirstMessageToday()
 
-                    // Time limit reached for this session
-                    if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
-                        timeLimitReachedThisSession = true
+                    if (!firstMessageAlreadyShown) {
+                        // FIRST TIME TODAY: use time limit, then techniques every 3 min after
 
-                        // Show first message only if not shown today
-                        if (!hasShownFirstMessageToday()) {
+                        // Time limit reached for this session
+                        if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
+                            timeLimitReachedThisSession = true
                             showFirstMessage()
                             markFirstMessageShownToday()
-                        } else {
-                            // Already shown first message today, show technique instead
-                            showTechniqueMessage()
                         }
-                    }
 
-                    // Subsequent notifications every 3 minutes after time limit reached
-                    if (timeLimitReachedThisSession) {
-                        val timeAfterLimit = timeElapsed - timeLimitSeconds
-                        if (timeAfterLimit > 0 && timeAfterLimit % SUBSEQUENT_INTERVAL == 0) {
+                        // Subsequent notifications every 3 minutes after time limit reached
+                        if (timeLimitReachedThisSession) {
+                            val timeAfterLimit = timeElapsed - timeLimitSeconds
+                            if (timeAfterLimit > 0 && timeAfterLimit % SUBSEQUENT_INTERVAL == 0) {
+                                showTechniqueMessage()
+                            }
+                        }
+                    } else {
+                        // SUBSEQUENT SESSIONS: ignore time limit, techniques at 3, 6, 9...
+                        if (timeElapsed > 0 && timeElapsed % SUBSEQUENT_INTERVAL == 0) {
                             showTechniqueMessage()
                         }
                     }

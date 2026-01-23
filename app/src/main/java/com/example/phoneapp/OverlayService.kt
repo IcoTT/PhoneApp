@@ -71,12 +71,7 @@ class OverlayService : Service() {
         
         overlayView?.findViewById<TextView>(R.id.overlay_message)?.text = message
 
-        overlayView?.findViewById<Button>(R.id.btn_ok)?.setOnClickListener {
-            removeOverlay()
-            stopSelf()
-        }
-
-        overlayView?.findViewById<Button>(R.id.btn_cancel)?.setOnClickListener {
+        overlayView?.findViewById<Button>(R.id.btn_got_it)?.setOnClickListener {
             removeOverlay()
             stopSelf()
         }
