@@ -41,26 +41,12 @@
         android:textSize="16sp"
         android:gravity="start" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/btn_got_it"
+        android:layout_width="150dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btn_ok"
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:text="OK" />
-
-        <Button
-            android:id="@+id/btn_cancel"
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="Cancel" />
-
-    </LinearLayout>
+        android:layout_gravity="center"
+        android:text="Got it" />
 
 </LinearLayout>

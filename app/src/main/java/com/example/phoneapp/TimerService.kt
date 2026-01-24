@@ -37,6 +37,12 @@ class TimerService : Service() {
         const val SUBSEQUENT_INTERVAL = 180 // 3 minutes in seconds
         const val CHECK_INTERVAL = 1000L // Check every 1 second
         const val PREF_FIRST_MESSAGE_DATE = "first_message_date"
+        
+        // Stats keys
+        const val PREF_STATS_DATE = "stats_date"
+        const val PREF_STATS_TIME_SECONDS = "stats_time_seconds"
+        const val PREF_STATS_BREAKS = "stats_breaks"
+        const val PREF_STATS_TECHNIQUES = "stats_techniques"
     }
 
     // Techniques as Pair(subheading, body)
@@ -197,6 +203,43 @@ class TimerService : Service() {
         prefs.edit().putString(PREF_FIRST_MESSAGE_DATE, getTodayDateString()).apply()
     }
 
+    // Stats helper methods
+    private fun resetStatsIfNewDay() {
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val statsDate = prefs.getString(PREF_STATS_DATE, null)
+        val today = getTodayDateString()
+        
+        if (statsDate != today) {
+            prefs.edit()
+                .putString(PREF_STATS_DATE, today)
+                .putInt(PREF_STATS_TIME_SECONDS, 0)
+                .putInt(PREF_STATS_BREAKS, 0)
+                .putInt(PREF_STATS_TECHNIQUES, 0)
+                .apply()
+        }
+    }
+
+    private fun incrementTimeOnApps() {
+        resetStatsIfNewDay()
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val currentTime = prefs.getInt(PREF_STATS_TIME_SECONDS, 0)
+        prefs.edit().putInt(PREF_STATS_TIME_SECONDS, currentTime + 1).apply()
+    }
+
+    private fun incrementBreaks() {
+        resetStatsIfNewDay()
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val currentBreaks = prefs.getInt(PREF_STATS_BREAKS, 0)
+        prefs.edit().putInt(PREF_STATS_BREAKS, currentBreaks + 1).apply()
+    }
+
+    private fun incrementTechniques() {
+        resetStatsIfNewDay()
+        val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+        val currentTechniques = prefs.getInt(PREF_STATS_TECHNIQUES, 0)
+        prefs.edit().putInt(PREF_STATS_TECHNIQUES, currentTechniques + 1).apply()
+    }
+
     private fun startMonitoring() {
         handler.post(object : Runnable {
             override fun run() {
@@ -222,27 +265,31 @@ class TimerService : Service() {
 
                     // Count time
                     timeElapsed++
+                    incrementTimeOnApps()
 
                     val timeLimitSeconds = timeLimit * 60
+                    val firstMessageAlreadyShown = hasShownFirstMessageToday()
 
-                    // Time limit reached for this session
-                    if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
-                        timeLimitReachedThisSession = true
+                    if (!firstMessageAlreadyShown) {
+                        // FIRST TIME TODAY: use time limit, then techniques every 3 min after
 
-                        // Show first message only if not shown today
-                        if (!hasShownFirstMessageToday()) {
+                        // Time limit reached for this session
+                        if (timeElapsed >= timeLimitSeconds && !timeLimitReachedThisSession) {
+                            timeLimitReachedThisSession = true
                             showFirstMessage()
                             markFirstMessageShownToday()
-                        } else {
-                            // Already shown first message today, show technique instead
-                            showTechniqueMessage()
                         }
-                    }
 
-                    // Subsequent notifications every 3 minutes after time limit reached
-                    if (timeLimitReachedThisSession) {
-                        val timeAfterLimit = timeElapsed - timeLimitSeconds
-                        if (timeAfterLimit > 0 && timeAfterLimit % SUBSEQUENT_INTERVAL == 0) {
+                        // Subsequent notifications every 3 minutes after time limit reached
+                        if (timeLimitReachedThisSession) {
+                            val timeAfterLimit = timeElapsed - timeLimitSeconds
+                            if (timeAfterLimit > 0 && timeAfterLimit % SUBSEQUENT_INTERVAL == 0) {
+                                showTechniqueMessage()
+                            }
+                        }
+                    } else {
+                        // SUBSEQUENT SESSIONS: ignore time limit, techniques at 3, 6, 9...
+                        if (timeElapsed > 0 && timeElapsed % SUBSEQUENT_INTERVAL == 0) {
                             showTechniqueMessage()
                         }
                     }
@@ -266,6 +313,7 @@ class TimerService : Service() {
                             timeElapsed = 0
                             timeLimitReachedThisSession = false
                             breakStartTime = null
+                            incrementBreaks()
                             updateForegroundNotificationBreakComplete()
                         } else {
                             // Still in short break window
@@ -383,6 +431,7 @@ class TimerService : Service() {
     private fun showTechniqueMessage() {
         val title = "Try this quick technique ✨"
         val technique = getNextTechnique()
+        incrementTechniques()
         showOverlayOrNotification(title, technique.first, technique.second)
     }
 

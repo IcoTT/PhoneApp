@@ -76,6 +76,12 @@ class MainActivity : ComponentActivity() {
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val appsSelected = (prefs.getStringSet("monitored_apps", emptySet())?.size ?: 0) > 0
 
+        // Read today's stats
+        val statsDate = prefs.getString("stats_date", null)
+        val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+        val statsTimeSeconds = if (statsDate == today) prefs.getInt("stats_time_seconds", 0) else 0
+        val statsBreaks = if (statsDate == today) prefs.getInt("stats_breaks", 0) else 0
+
         setContent {
             PhoneAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -83,6 +89,8 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding),
                         isMonitoring = currentMonitoring,
                         hasAppsSelected = appsSelected,
+                        statsTimeSeconds = statsTimeSeconds,
+                        statsBreaks = statsBreaks,
                         onStart = { checkAllPermissionsAndStart() },
                         onStop = { stopTimerService() },
                         onChooseApps = { openAppSelection() },
@@ -193,6 +201,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     isMonitoring: Boolean = false,
     hasAppsSelected: Boolean = false,
+    statsTimeSeconds: Int = 0,
+    statsBreaks: Int = 0,
     onStart: () -> Unit = {},
     onStop: () -> Unit = {},
     onChooseApps: () -> Unit = {},
@@ -246,7 +256,22 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Today's stats
+        if (statsTimeSeconds > 0 || statsBreaks > 0) {
+            val hours = statsTimeSeconds / 3600
+            val mins = (statsTimeSeconds % 3600) / 60
+            val timeText = if (hours > 0) "${hours}h ${mins}m" else "${mins}m"
+            
+            Text(
+                text = "Today: $timeText on apps · $statsBreaks breaks",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF7E57C2)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Time limit",
