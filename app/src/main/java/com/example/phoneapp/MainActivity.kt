@@ -267,7 +267,7 @@ fun SettingsScreen(
             Text(
                 text = "Today: $timeText on apps · $statsBreaks breaks",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = Color(0xFF7E57C2)
             )
         }
 
