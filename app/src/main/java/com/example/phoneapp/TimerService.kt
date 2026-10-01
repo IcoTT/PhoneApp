@@ -37,7 +37,7 @@ class TimerService : Service() {
         const val SUBSEQUENT_INTERVAL = 180 // 3 minutes in seconds
         const val CHECK_INTERVAL = 1000L // Check every 1 second
         const val PREF_FIRST_MESSAGE_DATE = "first_message_date"
-        
+
         // Stats keys
         const val PREF_STATS_DATE = "stats_date"
         const val PREF_STATS_TIME_SECONDS = "stats_time_seconds"
@@ -45,118 +45,231 @@ class TimerService : Service() {
         const val PREF_STATS_TECHNIQUES = "stats_techniques"
     }
 
-    // Techniques as Pair(subheading, body)
+    // Data class with Category attribute
+    data class Technique(
+        val category: String,
+        val subheading: String,
+        val body: String
+    )
+
     private val techniques = listOf(
+
+        // ── CATEGORY: Body brings you back (somatic) ──────────────────────────
+
         // 1
-        Pair(
-            "Support contact with yourself.",
-            """
-            This will weaken the algorithm's influence on your will.
+        Technique(
+            category = "Body brings you back",
+            subheading = "Breath",
+            body = """
+                Take 5 deep breaths.
+                Watch your belly rise and fall.
 
-            Let's do it like this:
-            → Take 5 deep breaths
-            → Watch your belly rise and fall
-
-            You've just interrupted the flood of cheap dopamine. If you want, you can stop scrolling.
+                Done. You just interrupted the autopilot.
+                You can leave.
             """.trimIndent()
         ),
         // 2
-        Pair(
-            "Activate your calm like a CIA agent…",
-            """
-            The algorithm will stop chasing you.
+        Technique(
+            category = "Body brings you back",
+            subheading = "The quietest sound",
+            body = """
+                What's the quietest sound you can hear right now?
+                Listen to it for 10 seconds.
 
-            Let's do it like this:
-            → Without moving your head or eyes, notice what's at the very edge of your field of vision.
-            → For a moment, observe everything you can see this way.
-
-            You've just reduced the stress that drives you to scroll. If you want, you can stop.
+                Done. The stream of thoughts has broken.
+                You can leave.
             """.trimIndent()
         ),
         // 3
-        Pair(
-            "Use your hearing.",
-            """
-            Your mind can't focus on 2 things at once.
+        Technique(
+            category = "Body brings you back",
+            subheading = "Your feet",
+            body = """
+                What do you feel under your feet?
+                Floor? Carpet? Slippers?
+                Notice it for 5 seconds.
 
-            Use this:
-            → What's the quietest sound you can hear right now?
-            → Focus on it for 10 seconds
-
-            You've just interrupted the flow of constant thoughts and reduced your stress. If you want, you can leave.
+                Done. You just stopped scrolling.
+                You can leave.
             """.trimIndent()
         ),
         // 4
-        Pair(
-            "Good stress is never bad.",
-            """
-            It will pull you out of anxious scrolling.
+        Technique(
+            category = "Body brings you back",
+            subheading = "Phone in your hand",
+            body = """
+                What does your hand feel?
+                The temperature of the phone. The smoothness of the glass. Its weight.
+                Notice it for 5 seconds.
 
-            Do it like this:
-            → Calmly breathe in.
-            → Calmly breathe out and hold.
-            → Count how long you can last without breathing. When you feel the first urge to breathe, take a breath.
-
-            You've just created a window, thanks to which, if you want, you can toss your phone away.
+                Done. You've created space.
+                You can leave.
             """.trimIndent()
         ),
         // 5
-        Pair(
-            "Time is passing.",
-            """
-            In 30 minutes:
-            → If you close Instagram now - how will you feel?
-            → If you keep scrolling - how will you feel?
+        Technique(
+            category = "Body brings you back",
+            subheading = "Your spine",
+            body = """
+                Find the place where your spine meets your head.
+                Slowly move your attention all the way down your spine.
 
-            Choose which YOU you want to be.
+                Done. The algorithm just lost its power over you.
+                You can leave.
             """.trimIndent()
         ),
         // 6
-        Pair(
-            "This is a challenge!",
-            """
-            Don't move to the next reel until you've taken 5 breaths.
-            → 5... 4... 3...
+        Technique(
+            category = "Body brings you back",
+            subheading = "Edge of vision — CIA technique",
+            body = """
+                Without moving your head or eyes:
+                Notice what you can see at the very edge of your field of vision.
+                Hold it for 10 seconds.
 
-            Now you can continue, but you've created space.
-            You don't have to.
+                Done. Your stress just dropped.
+                You can leave.
             """.trimIndent()
         ),
         // 7
-        Pair(
-            "Your attention is the key.",
-            """
-            Did you notice your right big toe on your left foot? No? Well, now you do 😊.
-            → Give it 5 exhales of attention
+        Technique(
+            category = "Body brings you back",
+            subheading = "Breath hold — challenge",
+            body = """
+                → Breathe in calmly.
+                → Breathe out and hold.
+                → Count how long you can last — no panic.
 
-            A space has emerged in your mind. What will you do with it?
-
-            You've just broken the chain of scrolling. If you want, you can give your attention to something else.
+                Done. You've just opened a window of freedom.
+                You can leave.
             """.trimIndent()
         ),
+
+        // ── CATEGORY: Your future self is calling (time perspective) ──────────
+
         // 8
-        Pair(
-            "It's completely normal that you don't feel like stopping.",
-            """
-            It was designed that way.
+        Technique(
+            category = "Your future self is calling",
+            subheading = "In 30 minutes…",
+            body = """
+                In 30 minutes:
+                → If you close Instagram now — how will you feel?
+                → If you keep scrolling — how will you feel?
 
-            But don't forget..
-
-            If you want, you can.
+                Choose which YOU you want to be.
             """.trimIndent()
         ),
         // 9
-        Pair(
-            "Fun fact:",
-            """
-            → Instagram will still be here in an hour
-            → Tomorrow too
-            → Even in 10 years
+        Technique(
+            category = "Your future self is calling",
+            subheading = "This moment",
+            body = """
+                Fun fact:
+                → Instagram will still be here in an hour.
+                → Tomorrow too.
+                → Even in 10 years.
 
-            But this moment of your life?
-            You only get it once.
+                But this moment of your life?
+                You only get it once.
 
-            What will you do with it?
+                What will you do with it?
+            """.trimIndent()
+        ),
+
+        // ── CATEGORY: You see through manipulation (awareness) ────────────────
+
+        // 10
+        Technique(
+            category = "You see through manipulation",
+            subheading = "The algorithm is robbing you",
+            body = """
+                Let's be honest:
+                The algorithm manipulates you and steals your time.
+                Its one job = show you as many ads as possible.
+
+                Will you let it?
+            """.trimIndent()
+        ),
+        // 11
+        Technique(
+            category = "You see through manipulation",
+            subheading = "Nothing is free",
+            body = """
+                Let's be honest:
+                Social media isn't free.
+                Companies pay big money for your time.
+                You are the product.
+
+                Will you let them?
+            """.trimIndent()
+        ),
+        // 12
+        Technique(
+            category = "You see through manipulation",
+            subheading = "Searching for nothing",
+            body = """
+                Let's be honest:
+                The chance you'll find something truly valuable right now? Small.
+                That's why you scroll… and find nothing.
+
+                You can just stop.
+            """.trimIndent()
+        ),
+        // 13
+        Technique(
+            category = "You see through manipulation",
+            subheading = "What do you hate about this?",
+            body = """
+                Think about it:
+                What's the most disgusting thing about endless scrolling?
+                What's the real reason you want to scroll less?
+
+                You have the chance to act on it. Right now.
+            """.trimIndent()
+        ),
+
+        // ── CATEGORY: Pattern interrupt ───────────────────────────────────────
+
+        // 14
+        Technique(
+            category = "Pattern interrupt",
+            subheading = "5 breaths — challenge",
+            body = """
+                Challenge!
+                Don't move to the next reel until you've taken 5 full breaths.
+                5… 4… 3… 2… 1…
+
+                Done. You've created space.
+                Now you can continue. But you don't have to.
+            """.trimIndent()
+        ),
+        // 15
+        Technique(
+            category = "Pattern interrupt",
+            subheading = "It's completely OK",
+            body = """
+                It's completely normal that you don't feel like stopping.
+                That's how it was designed.
+
+                But don't forget:
+                If you want, you can.
+            """.trimIndent()
+        ),
+
+        // ── CATEGORY: Inner strength (bonus) ─────────────────────────────────
+
+        // 16
+        Technique(
+            category = "Inner strength",
+            subheading = "Your power",
+            body = """
+                Remember:
+                When did you feel the most powerful in your life?
+                Where in your body do you feel that strength?
+
+                Feel it. 3 seconds.
+
+                Use that power. Put your phone down.
             """.trimIndent()
         )
     )
@@ -208,7 +321,7 @@ class TimerService : Service() {
         val prefs = getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
         val statsDate = prefs.getString(PREF_STATS_DATE, null)
         val today = getTodayDateString()
-        
+
         if (statsDate != today) {
             prefs.edit()
                 .putString(PREF_STATS_DATE, today)
@@ -432,10 +545,11 @@ class TimerService : Service() {
         val title = "Try this quick technique ✨"
         val technique = getNextTechnique()
         incrementTechniques()
-        showOverlayOrNotification(title, technique.first, technique.second)
+        // category is available here as technique.category if you want to log or display it
+        showOverlayOrNotification(title, technique.subheading, technique.body)
     }
 
-    private fun getNextTechnique(): Pair<String, String> {
+    private fun getNextTechnique(): Technique {
         // If all techniques have been shown, reshuffle
         if (remainingTechniques.isEmpty()) {
             remainingTechniques = techniques.indices.shuffled().toMutableList()
